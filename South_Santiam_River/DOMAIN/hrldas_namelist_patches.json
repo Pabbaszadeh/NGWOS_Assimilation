@@ -1,0 +1,101 @@
+{
+    "base": {            
+        "noahlsm_offline": {
+            "hrldas_setup_file": "/scratch/fatemehs-fatemehs/WRB_DA3/NWM/DOMAIN/wrfinput_d0x.nc",
+            "khour": 8784,
+            "indir": "FORCING_perturbed",
+            "forcing_timestep": 3600,
+	    "output_timestep": 3600,
+	    "noah_timestep": 3600,
+            "spatial_filename": "/scratch/fatemehs-fatemehs/WRB_DA3/NWM/DOMAIN/soil_properties.nc",
+            "restart_filename_requested": "/scratch/fatemehs-fatemehs/WRB_DA3/NWM/RESTART/RESTART.2023110100_DOMAIN1",
+	    "restart_frequency_hours": 1,
+            "start_year": 2023,
+            "start_month": 11,
+            "start_day": 1,
+            "start_hour": 0,
+            "start_min": 0
+        },
+        "wrf_hydro_offline": {
+            "forc_typ": 1
+        }
+    },
+    "nwm": {
+        "noahlsm_offline": {},
+        "wrf_hydro_offline": {}
+    },
+
+    "nwm_short_range" : {
+        "noahlsm_offline": {},
+        "wrf_hydro_offline": {}
+    },
+
+    "nwm_medium_range" : {
+        "noahlsm_offline": {},
+        "wrf_hydro_offline": {}
+    },
+
+    "nwm_long_range" : {
+        "noahlsm_offline": {
+            "hrldas_setup_file": 
+            "indir": 
+            "forcing_timestep": 
+            "spatial_filename": 
+            "restart_filename_requested": 
+        },
+        "wrf_hydro_offline": {}
+    },
+
+    "nwm_channel-only" : {
+        "noahlsm_offline": {
+            "indir": 
+        },
+        "wrf_hydro_offline": {
+            "forc_typ": 
+        }
+    },
+
+    "nwm_output_ana": {
+        "noahlsm_offline": {},
+        "wrf_hydro_offline": {}
+    },
+
+    "nwm_output_long_range" : {
+        "noahlsm_offline": {
+            "hrldas_setup_file": 
+            "indir": 
+            "forcing_timestep": 
+            "spatial_filename": 
+            "restart_filename_requested": 
+        },
+        "wrf_hydro_offline": {}
+    },
+
+    "gridded" : {
+        "noahlsm_offline": {
+            "hrldas_setup_file": 
+            "spatial_filename": 
+            "restart_filename_requested":
+        },
+        "wrf_hydro_offline": {}
+    },
+
+    "gridded_no_lakes": {
+        "noahlsm_offline": {
+            "hrldas_setup_file": 
+            "spatial_filename": 
+            "restart_filename_requested": 
+        },
+        "wrf_hydro_offline": {}
+    },
+
+    "reach": {
+        "noahlsm_offline": {
+            "hrldas_setup_file": 
+            "spatial_filename":
+            "restart_filename_requested":
+        },
+        "wrf_hydro_offline": {}
+    }
+
+}

@@ -1,0 +1,261 @@
+
+
+
+modules: ## !!!  NOT currently in use: make sure your modules match
+         ##      your mkmf_template and your compiler choices below.
+
+  
+dart:
+  use_existing_build: True
+  # Absolute path required
+  dart_src: /scratch/fatemehs-fatemehs/DART
+  fork: ## !!! NOT currently in use
+  commit: ## !!! NOT currently in use
+  mkmf_template: mkmf.template.gfortran #_5.4.0_docker
+  mpi: True
+  build_dir: dart_build
+  work_dirs: ['models/wrf_hydro/work', 'observations/obs_converters/USGS/work']
+
+
+wrf_hydro:
+  use_existing_build: True
+  # Absolute path required:
+  wrf_hydro_src: /home/fatemehs/wrf_hydro_nwm_public-applications-IWAA_Retrospective
+  fork:   ## !!! NOT currently in use
+  commit: ## !!! NOT currently in use
+  model_config: nwm
+  compiler: gfort
+  compile_options: 
+  build_dir: build
+  # Absolute path required: 
+  domain_src: /scratch/fatemehs-fatemehs/WRB_DA2/NWM/DOMAIN
+  domain_version: v5.2.0
+  domain_symlink: False
+  hydro_namelist_config_file: /scratch/fatemehs-fatemehs/WRB_DA2/NWM/DOMAIN/hydro_namelist_patches.json
+  hrldas_namelist_config_file: /scratch/fatemehs-fatemehs/WRB_DA2/NWM/DOMAIN/hrldas_namelist_patches.json
+  compile_options_config_file: /scratch/fatemehs-fatemehs/WRB_DA2/NWM/DOMAIN/compile_options.json
+
+
+experiment:
+  # Absolute path required
+  experiment_dir: /scratch/fatemehs-fatemehs/WRB_DA2/experiment/test14
+  experiment_dir_mode: 'w'   ## !!! May NOT be in use
+  run_dir: /scratch/fatemehs-fatemehs/WRB_DA2/run/test14
+  run_dir_mode: 'w'  ## !!! May NOT be in use
+  # Absolute path required
+
+
+# ensemble_construction
+ensemble:
+  # Number of cores to use when constructing the ensemble.
+  ncores_setup: 10
+  size: 50
+  # A python script which constructs the ensemble from a single member
+  # specified in the wrf_hydro options.
+  constructor: /scratch/fatemehs-fatemehs/WRB_DA2/configs/ens_setup_NWM_channel-only.py
+
+
+# How is the initial ensemble created?  
+initial_ens:
+  path: /scratch/fatemehs-fatemehs/WRB_DA2/initial_ens/test14
+  param_restart_file: 
+    create: True
+    # If mode 'r' will create if does not exist. If mode 'w' will overwrite.
+    mode: 'w'   ## !!! May NOT be in use
+    # The following default to the restart files provided in the domain.
+    hydro_rst: /scratch/fatemehs-fatemehs/WRB_DA2/NWM/RESTART/HYDRO_RST.2023-11-01_00:00_DOMAIN1
+    restart: /scratch/fatemehs-fatemehs/WRB_DA2/NWM/RESTART/RESTART.2023110100_DOMAIN1
+    existing_variables: [qlink1, qlink2]
+    new_variables: [qBucketMult, qSfcLatRunoffMult]
+    values: [1, 1]
+  from_filter:
+    # Optionally create the inital ensemble from filter perturbation + advance.
+    # This will use the same ensemble constructed by set
+    # If there is an from_filter/ dir in inital_ens:path: then inflation files are added to
+    # the run_dir.
+    create: True
+    cmd: 'srun -n 20 ./filter'
+    # If use is True, then consistency checks between the initial
+    # ensemble and the experiment are performed.
+    use: True
+    mode: 'r'   ## !!! May NOT be in use
+    input_nml:
+      filter_nml:
+        inf_flavor: [2, 0]
+        inf_initial: [1.0, 1.0]
+        inf_sd_initial: [0.6, 0.6]
+        inf_sd_lower_bound: [0.6, 0.6]
+        inf_damping: [0.9, 0.9]
+        inf_initial_from_restart: [false, false]
+        inf_sd_initial_from_restart: [false, false]
+        # Below here, the fields are not simply patched:
+        input_state_file_list:
+          # Here, only specify the /path/to/restart file for each. The list file is
+          # handled internally.
+          restart_file_list.txt:
+          # If blank: the restarts in the wrfhydro config/domain are used.
+          hydro_file_list.txt: '/scratch/fatemehs-fatemehs/WRB_DA2/NWM/RESTART/HYDRO_RST.2023-11-01_00:00_DOMAIN1'
+          param_file_list.txt: 
+          
+      model_nml:
+        model_perturbation_amplitude: 0.2
+        perturb_distribution: 'lognormal'
+        debug: 0
+        hydro_variables:
+          ['qlink1', 'QTY_STREAM_FLOW',   '0.0', 'NA', 'UPDATE',
+           'hlink',  'QTY_STREAM_HEIGHT', '0.0', 'NA', 'UPDATE'
+          ]
+        parameters:
+          ['qBucketMult',       'QTY_BUCKET_MULTIPLIER', '0.1', '10.0', 'UPDATE',
+           'qSfcLatRunoffMult', 'QTY_RUNOFF_MULTIPLIER', '0.1', '10.0', 'UPDATE']
+        # Do not specify input_state_file_list, domain_order, or domain_shapefiles.
+        # These are handled by the values passed to input_nml:filter_nml:input_state_file_list
+  advance:
+    end_time:
+      
+
+# The fields under the top level must be listed in dart:observations: above.
+observation_preparation:
+  all_obs_dir: /scratch/fatemehs-fatemehs/WRB_DA2/obs_seq/test3
+  USGS_daily:
+    prepare: False
+    identity_obs: False
+    input_dir: /scratch/fatemehs-fatemehs/WRB_DA2/NWM/nudgingTimeSliceObs_hourly
+    output_dir: /scratch/fatemehs-fatemehs/WRB_DA2/obs_seq/test3/USGS
+    start_date: 2023-10-01
+    end_date:   2024-09-30
+    # A list of gages can be given in the following which will be written to the file.
+    # If a string is given, that indicates a file to use which will be symlinked into
+    # place for reference.
+    wanted_gages: ["14185865"]
+    input_nml_patches:
+      # Identity_obs == True needs: create_identity_streamflow_obs_nml     
+      # Identity_obs == False needs: convert_streamflow_nml
+      convert_streamflow_nml:
+        # input_files: handled internally using input_dir and start and end dates above.
+        # location_file: handled internally.
+        # gages_list_file: handled by wanted gages above.
+        # The following patches are applied directly.
+        obs_fraction_for_error: 0.17
+        
+    exe_cmd: '{cmd} >& converter.stdeo'
+    scheduler: null
+    interactive:
+      ncpus: 1
+      # ppn is the number of processors per node. This is required to be correct.
+      #ncpus: 20
+      #mpiprocs: 20
+      #reqmem: 20
+      #account:
+      #walltime: '00:10'
+      #job_name: 'obs_prep_croton' #_{model_start_time_str}'
+      #queue: 'medium'
+      #email_when: "abe"
+      #email_who: fatemehs@pdx.edu    
+
+          
+##################################
+    
+run_experiment: 
+  
+  time:
+    end_time: 2023-11-01_00:00 ## Format: %Y-%m%d_%H:%M
+    advance_model_hours: 1 
+    assim_window:
+      use_input_nml: True
+      assim_window_size_hours: 1
+    submit_all_jobs: False  ## not currently used.
+    skip_missing_obs_hours: True
+    skip_missing_obs_days: True
+    
+  perturb_forcing:
+    perturb: True
+    src_dir: '/scratch/fatemehs-fatemehs/WRB_DA2/FORCING'
+    src_copy: True
+    # Absolute path required
+    noise_function_files: [
+    '/scratch/fatemehs-fatemehs/WRB_DA2/perturb/uniform_theta.py',
+    '/scratch/fatemehs-fatemehs/WRB_DA2/perturb/perturb_channel_only_forcing_v4.py',
+    '/scratch/fatemehs-fatemehs/WRB_DA2/noise/noise_qSfcLatRunoff_relative.py',
+    '/scratch/fatemehs-fatemehs/WRB_DA2/noise/noise_qBucket_relative.py'
+    ]
+    noise_cmd: 'python uniform_theta.py --run_dir . --apply && python perturb_channel_only_forcing_v4.py --use_theta --route_link /scratch/fatemehs-fatemehs/WRB_DA2/NWM/DOMAIN/Route_Link.nc --source_forcing_dir FORCING --perturb_forcing_dir FORCING_perturbed --qsfclat_perturb_func /scratch/fatemehs-fatemehs/WRB_DA2/noise/noise_qSfcLatRunoff_relative.py --qbucket_perturb_func /scratch/fatemehs-fatemehs/WRB_DA2/noise/noise_qBucket_relative.py'
+  dart:
+    exes: ['filter', 'obs_sequence_tool']
+    input_nml_patches:
+      filter_nml:
+        inf_flavor: [2, 4]
+        inf_initial: [1.0, 0.8]
+        inf_lower_bound: [1.0, 0.0]
+        inf_sd_initial: [0.6, 0.0]
+        inf_sd_lower_bound: [0.6, 0.0]
+        inf_damping: [0.9, 1.0]
+        inf_sd_max_change: [1.05, 1.05]
+        inf_initial_from_restart: [true, false]
+        inf_sd_initial_from_restart: [true, false]
+        #input_state_file_list: 'hydro_file_list.txt'
+        #output_state_file_list: 'hydro_file_list.txt'
+      model_nml:
+        hydro_variables:
+          ['qlink1', 'QTY_STREAM_FLOW',   '0.0', 'NA', 'UPDATE',
+           'hlink',  'QTY_STREAM_HEIGHT', '0.0', 'NA', 'UPDATE'
+          ]
+        parameters:
+          ['qBucketMult',       'QTY_BUCKET_MULTIPLIER', '0.1', '10.0', 'UPDATE',
+           'qSfcLatRunoffMult', 'QTY_RUNOFF_MULTIPLIER', '0.1', '10.0', 'UPDATE']
+        max_link_distance: 5000.0
+        # domain_order and domain_shapefiles are made consistent with the initial ensemble
+        # when initial_ens: from_filter: use is True.
+        # domain_order: 'hydro'
+        # domain_shapefiles: 'restart.hydro.nc'
+        # input_state_file_list and output_state_file_list conventions in
+        # are used in run_filter_experiment:
+        #Note the name and order convention for the state file lists:
+        # 1) hydro_file_list.txt  2) lsm_file_list.txt  3) param_file_list.txt
+      assim_tools_nml:
+        cutoff: 0.0003924  # 0.5*the max. reach length specified in model_nml
+      cov_cutoff_nml:
+        select_localization: 1
+
+  # Notes on choosing job_execution resources.
+  # 1) Determine wrfhydro:nproc
+  # 2) Then determine scheduler:ppn
+  # 3) n_teams_per_node = floor( scheduler:ppn / wrfhydro:nproc )
+  # 4) Then select scheduler:nnodes to determine how many teams (max concurrent members
+  #    running.
+  job_execution:
+    machine:
+      ppn_max: 20
+    scheduler:
+      nnodes: 3
+      ppn_use: 20
+      account: 
+      walltime: '72:00:00'
+      job_name: ens_adv
+      queue: medium
+      email_when: abe
+      email_who: fatemehs@pdx.edu
+    wrf_hydro:
+      # The number of mpi processes for each model advance
+      nproc: 1
+      # The exe_cmd depends on your mpi implememtation. Currently only supporting openmpi.
+      # The exe_cmd applied to both the entry and exit commands applying the exe_cmd form to each
+      # semicolon-separated command and running these serially with nproc=1 and using only the
+      # first available hostname.
+      # The exe_cmd is solved for the model run by substituting ./wrf_hydro.exe for {cmd} and using
+      # nproc above and the appropriate, full set of hostnames available.
+      # Certain MPI distributions may need env variable, passed as a dictionary of key:value pairs.
+      # OpenMPI:
+      exe_cmd: 'srun --nodes=1 --ntasks={nproc} --ntasks-per-node={nproc} --distribution=block:block ./wrf_hydro.exe'
+      env: None
+      # MPT: UNSATISFACTORY PERFORMANCE.
+      # exe_cmd: 'mpirun --host {hostname} -np {nproc} ./wrf_hydro.exe'
+      # env = {**os.environ, **{'MPI_SHEPHERD':'true'}}
+    dart:
+      # This must not exceed scheduler:ppn_use
+      nproc: 8
+      # OpenMPI
+      exe_cmd: 'srun --nodes=1 --ntasks={nproc} --ntasks-per-node={nproc} --distribution=block:block ./filter'
+      #exe_cmd: 'mpirun --host {hostname} -np {nproc} {cmd}'
+      # MPT
+      #cmd: 'mpirun {hostname} -np {nproc} {cmd}'

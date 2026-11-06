@@ -1,0 +1,253 @@
+&probit_transform_nml
+/
+
+&algorithm_info_nml
+    qceff_table_filename = ''
+/
+
+&model_nml
+    assimilation_period_days = 0
+    assimilation_period_seconds = 3600
+    lsm_model_choice = 'noahMP'
+    model_perturbation_amplitude = 0.2
+    perturb_distribution = 'lognormal'
+    max_link_distance = 9000.0
+    streamflow_4_local_multipliers = 0.0001
+    debug = 1
+    domain_order = 'hydro', 'parameters'
+    domain_shapefiles = 'restart.hydro.nc', 'parameters.nc'
+    hydro_variables = 'qlink1', 'QTY_STREAM_FLOW', '0.0', 'NA', 'UPDATE',
+                      'hlink', 'QTY_STREAM_HEIGHT', '0.0', 'NA', 'UPDATE'
+    parameters = 'qBucketMult', 'QTY_BUCKET_MULTIPLIER', '0.1', '10.0',
+                 'UPDATE', 'qSfcLatRunoffMult', 'QTY_RUNOFF_MULTIPLIER',
+                 '0.1', '10.0', 'UPDATE'
+/
+
+&convert_streamflow_nml
+    input_files = 'list_of_obs_files.txt'
+    output_file = 'obs_seq.out'
+    location_file = '/scratch/fatemehs-fatemehs/WRB_DA3/NWM/DOMAIN/Route_Link.nc'
+    gages_list_file = 'wanted_gages_list.txt'
+    obs_fraction_for_error = 0.17
+    debug = 1
+/
+
+&perfect_model_obs_nml
+    read_input_state_from_file = .true.
+    single_file_in = .false.
+    input_state_files = 'restart.hydro.nc'
+    init_time_days = -1
+    init_time_seconds = -1
+    write_output_state_to_file = .false.
+    single_file_out = .false.
+    output_state_files = 'perfect_d01.nc'
+    output_interval = 1
+    obs_seq_in_file_name = 'obs_seq.in'
+    obs_seq_out_file_name = 'obs_seq.out'
+    first_obs_days = -1
+    first_obs_seconds = -1
+    last_obs_days = -1
+    last_obs_seconds = -1
+    async = 0
+    trace_execution = .false.
+    output_timestamps = .false.
+    print_every_nth_obs = -1
+    output_forward_op_errors = .false.
+    silence = .false.
+/
+
+&filter_nml
+    input_state_file_list = 'hydro_file_list.txt', 'param_file_list.txt'
+    single_file_in = .false.
+    init_time_days = -1
+    init_time_seconds = -1
+    perturb_from_single_instance = .false.
+    stages_to_write = 'preassim', 'analysis', 'output'
+    output_state_file_list = 'hydro_file_list.txt', 'param_file_list.txt'
+    output_mean = .true.
+    output_sd = .true.
+    output_members = .true.
+    num_output_state_members = 50
+    single_file_out = .false.
+    write_all_stages_at_end = .false.
+    ens_size = 50
+    num_groups = 1
+    inf_flavor = 2, 4
+    inf_initial_from_restart = .false., .false.
+    inf_sd_initial_from_restart = .false., .false.
+    inf_initial = 1.0, 0.8
+    inf_lower_bound = 1.0, 0.0
+    inf_upper_bound = 10.0, 1.0
+    inf_sd_initial = 0.6, 0.0
+    inf_sd_lower_bound = 0.6, 0.0
+    inf_sd_max_change = 1.05, 1.05
+    inf_damping = 0.9, 1.0
+    inf_deterministic = .true., .true.
+    obs_sequence_in_name = 'obs_seq.out'
+    obs_sequence_out_name = 'obs_seq.final'
+    num_output_obs_members = 50
+    first_obs_days = -1
+    first_obs_seconds = -1
+    last_obs_days = -1
+    last_obs_seconds = -1
+    output_timestamps = .true.
+    trace_execution = .true.
+    silence = .false.
+/
+
+&quality_control_nml
+    input_qc_threshold = 10.0
+    outlier_threshold = -1.0
+    enable_special_outlier_code = .false.
+/
+
+&assim_tools_nml
+    cutoff = 0.0007063
+    sort_obs_inc = .false.
+    spread_restoration = .false.
+    sampling_error_correction = .false.
+    adaptive_localization_threshold = -1
+    output_localization_diagnostics = .true.
+    localization_diagnostics_file = 'localization_diagnostics'
+    print_every_nth_obs = 0
+    rectangular_quadrature = .true.
+    gaussian_likelihood_tails = .false.
+/
+
+&ensemble_manager_nml
+    layout = 2
+    tasks_per_node = 20
+/
+
+&cov_cutoff_nml
+    select_localization = 1
+/
+
+&reg_factor_nml
+    select_regression = 1
+    input_reg_file = 'time_mean_reg'
+    save_reg_diagnostics = .false.
+    reg_diagnostics_file = 'reg_diagnostics'
+/
+
+&obs_sequence_nml
+    write_binary_obs_sequence = .false.
+/
+
+&obs_kind_nml
+    assimilate_these_obs_types = 'STREAM_FLOW'
+    evaluate_these_obs_types = ''
+/
+
+&preprocess_nml
+    overwrite_output = .true.
+    input_obs_qty_mod_file = '../../../assimilation_code/modules/observations/DEFAULT_obs_kind_mod.F90'
+    output_obs_qty_mod_file = '../../../assimilation_code/modules/observations/obs_kind_mod.f90'
+    input_obs_def_mod_file = '../../../observations/forward_operators/DEFAULT_obs_def_mod.F90'
+    output_obs_def_mod_file = '../../../observations/forward_operators/obs_def_mod.f90'
+    obs_type_files = '../../../observations/forward_operators/obs_def_streamflow_mod.f90',
+                     '../../../observations/forward_operators/obs_def_land_mod.f90',
+                     '../../../observations/forward_operators/obs_def_COSMOS_mod.f90'
+    quantity_files = '../../../assimilation_code/modules/observations/land_quantities_mod.f90',
+                     '../../../assimilation_code/modules/observations/atmosphere_quantities_mod.f90'
+/
+
+&location_nml
+    horiz_dist_only = .true.
+    approximate_distance = .false.
+    nlon = 29
+    nlat = 24
+    output_box_info = .false.
+/
+
+&utilities_nml
+    termlevel = 1
+    module_details = .false.
+    logfilename = 'dart_log.out'
+    nmlfilename = 'dart_log.nml'
+    write_nml = 'file'
+/
+
+&state_vector_io_nml
+    single_precision_output = .true.
+/
+
+&obs_sequence_tool_nml
+    num_input_files = 1
+    filename_seq = 'obs_seq.in'
+    filename_out = 'obs_seq.windowed'
+    print_only = .false.
+    first_obs_days = -1
+    first_obs_seconds = -1
+    last_obs_days = -1
+    last_obs_seconds = -1
+    min_lat = 44.14
+    max_lat = 44.62
+    min_lon = 237.37
+    max_lon = 238.01
+    gregorian_cal = .false.
+/
+
+&obs_diag_nml
+    obs_sequence_name = ''
+    obs_sequence_list = 'file_list.txt'
+    first_bin_center = 2023, 8, 23, 0, 0, 0
+    last_bin_center = 2024, 9, 30, 23, 0, 0
+    bin_separation = 0, 0, 0, 1, 0, 0
+    bin_width = 0, 0, 0, 1, 0, 0
+    time_to_skip = 0, 0, 0, 0, 0, 0
+    max_num_bins = 9000
+    trusted_obs = 'null'
+    nregions = 1
+    lonlim1 = 237.37
+    lonlim2 = 238.01
+    latlim1 = 44.14
+    latlim2 = 44.62
+    reg_names = 'WRB3'
+    print_mismatched_locs = .false.
+    create_rank_histogram = .true.
+    outliers_in_histogram = .true.
+    use_zero_error_obs = .false.
+    verbose = .false.
+    hlevel_edges = -100.0, 40000.0
+/
+
+&schedule_nml
+    calendar = 'Gregorian'
+    first_bin_start = 2023, 8, 23, 0, 0, 0
+    first_bin_end = 2023, 8, 24, 0, 0, 0
+    last_bin_end = 2024, 9, 30, 23, 0, 0
+    bin_interval_days = 1
+    bin_interval_seconds = 0
+    max_num_bins = 50
+    print_table = .true.
+/
+
+&obs_seq_to_netcdf_nml
+    obs_sequence_name = ''
+    obs_sequence_list = 'list_of_files.txt'
+    append_to_netcdf = .false.
+    lonlim1 = 237.37
+    lonlim2 = 238.01
+    latlim1 = 44.14
+    latlim2 = 44.62
+    verbose = .false.
+/
+
+&model_mod_check_nml
+    input_state_files = 'restart.hydro.nc'
+    output_state_files = 'mmc_output1.nc'
+    test1thru = 0
+    run_tests = 1, 2, 3, 4, 6, 7
+    x_ind = 1
+    loc_of_interest = 263.0, 40.0, 0.0
+    quantity_of_interest = 'QTY_STREAM_FLOW'
+    interp_test_dlon = 0.001
+    interp_test_dlat = 0.001
+    interp_test_dvert = 50.0
+    interp_test_lonrange = 237.51, 237.86
+    interp_test_latrange = 44.27, 44.5
+    interp_test_vertrange = 200.0, 300.0
+    interp_test_vertcoord = 'VERTISHEIGHT'
+    verbose = .true.
+/
